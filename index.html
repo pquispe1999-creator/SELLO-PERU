@@ -1,0 +1,61 @@
+import hashlib
+from datetime import datetime
+
+# --- Definición de la estructura de un Bloque ---
+class Bloque:
+    def __init__(self, indice, prueba_anterior, datos):
+        self.indice = indice
+        self.timestamp = str(datetime.now())
+        self.datos = datos  # Información del producto: origen, calidad, etc.
+        self.prueba_anterior = prueba_anterior  # Hash del bloque anterior
+        self.hash = self.calcular_hash()
+
+    def calcular_hash(self):
+        # Concatena los datos y aplica SHA-256 (la 'huella digital')
+        cadena_bloque = str(self.indice) + str(self.timestamp) + str(self.datos) + str(self.prueba_anterior)
+        return hashlib.sha256(cadena_bloque.encode()).hexdigest()
+
+# --- Funciones para la Cadena (Blockchain) ---
+
+def crear_bloque_genesis():
+    # Bloque inicial
+    return Bloque(0, "0", {"mensaje": "Bloque Genesis - Inicio de Sello Peru"})
+
+def anadir_bloque(bloque_anterior, datos_nuevos):
+    # Crea un nuevo bloque enlazándolo al hash del anterior
+    nuevo_indice = bloque_anterior.indice + 1
+    nuevo_hash_anterior = bloque_anterior.hash
+    return Bloque(nuevo_indice, nuevo_hash_anterior, datos_nuevos)
+
+# --- EJECUCIÓN DEL DEMO ---
+
+# 1. Crear la cadena
+cadena = []
+bloque_origen = crear_bloque_genesis()
+cadena.append(bloque_origen)
+
+# 2. Bloque 1: Registro del Agricultor
+datos_agricultor = {"Producto": "Cafe Organico", "Origen": "Cusco", "Productor": "Familia Quispe"}
+bloque_agricultor = anadir_bloque(bloque_origen, datos_agricultor)
+cadena.append(bloque_agricultor)
+
+# 3. Bloque 2: Registro del Procesamiento
+datos_procesamiento = {"Estado": "Procesado", "Fecha": "2025-11-26", "Certificado": "Fair Trade"}
+bloque_final = anadir_bloque(bloque_agricultor, datos_procesamiento)
+cadena.append(bloque_final)
+
+# --- DEMOSTRACIÓN DE FRAUDE ---
+
+# Simulación: Alguien altera el origen del café en el Bloque 1.
+cadena[1].datos["Origen"] = "Lima"
+
+# El hash del bloque alterado (Bloque 1) cambia
+hash_alterado = cadena[1].calcular_hash()
+
+# Mostrar la detección (El Bloque 2 se rompe)
+print(f"Hash del Bloque 1 ORIGINAL: {bloque_agricultor.hash}")
+print(f"Hash del Bloque 1 DESPUÉS del fraude: {hash_alterado}")
+print(f"Hash ANTERIOR guardado en el Bloque 2: {bloque_final.prueba_anterior}")
+
+# El hash alterado no coincide con el hash anterior del Bloque 2.
+# Fraude detectado.
